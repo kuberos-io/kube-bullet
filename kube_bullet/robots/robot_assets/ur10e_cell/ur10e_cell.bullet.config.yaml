@@ -8,10 +8,13 @@ controllable_components:
 arm_ur10e:
   joint_indices: [3, 4, 5, 6, 7, 8]
   initial_positions: [0, -0.5, 0.5, -0.5, -0.5, 0]
+  default_controller: trajectory_controller
 
 robotiq_gripper:
   joint_indices: [26] # finger_joint
   initial_positions: [0.3]
+  default_controller: position_controller
+  
   mimics:
     right_outer_knucle_joint:
       idx: 30
