@@ -1,0 +1,74 @@
+<?xml version="0.0" ?>
+<robot name="cube_fixture">
+    <material name="gray">
+      <color rgba="0.7294117647058823 0.6901960784313725 0.6745098039215687 1"/>
+    </material>
+    <link name="baseLink">
+    <contact>
+      <lateral_friction value="1.2"/>
+      <rolling_friction value="0.001"/>
+      <inertia_scaling value="2"/>
+    </contact>
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value=".1"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="0.0 -.038 0"/>
+        <geometry>
+            <box size=".076 .002 .007"/>
+        </geometry>
+        <material name="gray"/>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0.0 -.038 0"/>
+        <geometry>
+            <box size=".076 .002 .007"/>
+        </geometry>
+    </collision>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="0 .038 0"/>
+        <geometry>
+            <box size=".076 .002 .007"/>
+        </geometry>
+        <material name="gray"/>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="0 .038 0"/>
+        <geometry>
+            <box size=".076 .002 .007"/>
+        </geometry>
+    </collision>
+
+    <visual>
+        <origin rpy="0 0 0" xyz="-.038 0.0 0"/>
+        <geometry>
+            <box size=".002 .076 .007"/>
+        </geometry>
+        <material name="gray"/>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz="-.038 0.0 0"/>
+        <geometry>
+            <box size=".002 .076 .007"/>
+        </geometry>
+    </collision>
+
+    <visual>
+        <origin rpy="0 0 0" xyz=".038 0.0 0"/>
+        <geometry>
+            <box size=".002 .076 .007"/>
+        </geometry>
+        <material name="gray"/>
+    </visual>
+    <collision>
+        <origin rpy="0 0 0" xyz=".038 0.0 0"/>
+        <geometry>
+            <box size=".002 .076 .007"/>
+        </geometry>
+    </collision>
+    </link>
+</robot>
