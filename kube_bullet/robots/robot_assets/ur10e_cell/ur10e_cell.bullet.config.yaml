@@ -1,27 +1,33 @@
 robot_name: "ur10e_cell"
 urdf_path: "/workspace/kube_bullet/robots/robot_assets/ur10e_cell/ur10e_cell.urdf"
 
-controllable_components:
-  - arm_ur10e
+active_components:
+  - ur10e
   - robotiq_gripper
 
-arm_ur10e:
-  joint_indices: [3, 4, 5, 6, 7, 8]
-  initial_positions: [0, -0.5, 0.5, -0.5, -0.5, 0]
-  default_controller: trajectory_controller
+ur10e:
+  joints:
+    - shoulder_pan_joint
+    - shoulder_lift_joint
+    - elbow_joint
+    - wrist_1_joint
+    - wrist_2_joint
+    - wrist_3_joint
+  initial_positions: [0, -1.57, 1.57, -1.57, -1.57, 0]
+  default_controller: position_controller
+  goal_tolerance: 0.002
 
 robotiq_gripper:
-  joint_indices: [26] # finger_joint
-  initial_positions: [0.3]
+  joints:
+    - finger_joint # 27
+  initial_positions: [0.2]
   default_controller: position_controller
   
-  mimics:
-    right_outer_knucle_joint:
-      idx: 30
-      gain: 1
-    left_inner_finger_joint:
-      idx: 28
+  mimic_parent: finger_joint
+  mimic_joints:
+    left_inner_finger_joint: # 29
       gain: -1
-    right_inner_finger_joint:
-      idx: 32
+    right_outer_knuckle_joint: # 31
+      gain: 1
+    right_inner_finger_joint: # 33
       gain: -1
