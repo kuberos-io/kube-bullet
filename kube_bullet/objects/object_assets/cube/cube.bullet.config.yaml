@@ -1,0 +1,14 @@
+object_name: 'cube'
+urdf_path: "/workspace/kube_bullet/objects/object_assets/cube/object.urdf"
+
+grasp_poses:
+  - name: default
+    position: [0.0, 0.0, 0.0]
+    rotation_euler: [0.0, 0.0, 0.0]
+    quaternion: []
+  
+  - name: alternative
+    position: [0.0, 0.0, 0.0]
+    rotation_euler: [0.0, 0.0, 0.0]
+    quaternion: []
+
