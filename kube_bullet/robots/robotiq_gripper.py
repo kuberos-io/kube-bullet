@@ -22,7 +22,7 @@ class RobotiqGripper(RobotBase):
                  robot_config: dict) -> None:
         super().__init__(bullet_client, robot_uid, robot_config)
     
-        self.joint_idx = [27]
+        self.joint_idx = [26]
         
         self.setup_robotiq_gripper()
 
@@ -90,8 +90,8 @@ class RobotiqGripper(RobotBase):
         # TODO: Check the mimic with constraints
         self.gripper_joint_gains = [1, *[-gain for gain in mimic_joint_gains]]
         
-        logger.info("All gripper joint indexes: {self.gripper_joint_indexes}")
-        logger.info("Gains for mimic joints: {self.gripper_joint_gains}")
+        logger.info(f"All gripper joint indexes: {self.gripper_joint_indexes}")
+        logger.info(f"Gains for mimic joints: {self.gripper_joint_gains}")
         
         self.reset_gripper_joints()
         
@@ -125,7 +125,7 @@ class RobotiqGripper(RobotBase):
 
         self._bc.setJointMotorControlArray(
             bodyIndex=self.robot_uid,
-            jointIndices=[27, 29, 31, 33],
+            jointIndices=self.gripper_joint_indexes, # [26, 28, 30, 32],
             controlMode=p.POSITION_CONTROL,
             targetPositions=np.array([1.0, 1.0, -1.0, 1.0]) * position,
             # force=self.GRASPING_FORCE,
@@ -139,7 +139,7 @@ class RobotiqGripper(RobotBase):
         
         self._bc.setJointMotorControlArray(
             bodyIndex=self.robot_uid,
-            jointIndices=[27, 29, 31, 33],
+            jointIndices=self.gripper_joint_indexes, # [26, 28, 30, 32],
             controlMode=p.VELOCITY_CONTROL,
             targetVelocities=[1.0, 1.0, -1.0, 1.0],
             forces=[1, 1, 1 ,1]
