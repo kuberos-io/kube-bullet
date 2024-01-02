@@ -642,6 +642,12 @@
                 <box size="0.023 0.06 0.0075"/>
             </geometry>
         </collision>
+        <inertial>
+            <mass value="0.08"/>
+            <origin rpy="0 0 0" xyz="0.0 0.0 -0.025"/>
+            <inertia ixx="0.000014434577559500002" ixy="0.0" ixz="0.0" iyy="0.000014434577559500002" iyz="0.0"
+                     izz="0.000020452500000000002"/>
+        </inertial>
     </link>
     <!--    <link name="left_inner_knuckle">-->
     <!--        <inertial>-->
@@ -756,6 +762,12 @@
                 <box size="0.023 0.06 0.0075"/>
             </geometry>
         </collision>
+        <inertial>
+            <mass value="0.08"/>
+            <origin rpy="0 0 0" xyz="0.0 0.0 -0.025"/>
+            <inertia ixx="0.000014434577559500002" ixy="0.0" ixz="0.0" iyy="0.000014434577559500002" iyz="0.0"
+                     izz="0.000020452500000000002"/>
+        </inertial>
     </link>
     <!--    <link name="right_inner_knuckle">-->
     <!--        <inertial>-->
