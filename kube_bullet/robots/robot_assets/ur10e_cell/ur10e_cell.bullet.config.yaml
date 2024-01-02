@@ -13,7 +13,7 @@ ur10e:
     - wrist_1_joint
     - wrist_2_joint
     - wrist_3_joint
-  initial_positions: [0, -1.57, 1.57, -1.57, -1.57, 0]
+  initial_positions: [0, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]
   default_controller: position_controller
   goal_tolerance: 0.002
 
@@ -25,9 +25,9 @@ robotiq_gripper:
   
   mimic_parent: finger_joint
   mimic_joints:
-    left_inner_finger_joint: # 29
+    left_inner_finger_joint: # 28
       gain: -1
-    right_outer_knuckle_joint: # 31
+    right_outer_knuckle_joint: # 30
       gain: 1
-    right_inner_finger_joint: # 33
+    right_inner_finger_joint: # 32
       gain: -1
