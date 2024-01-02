@@ -1,5 +1,6 @@
 
 from collections import namedtuple
+from typing import Optional, Tuple
 from loguru import logger
 import numpy as np
 import pybullet as p
@@ -73,7 +74,7 @@ class RobotBase:
                     self.config['initial_positions'][i])
 
         # set joint motor controller
-        self.update_joint_motor_controllers(
+        self.set_joint_position_controller(
             joint_idx=self.motor_joint_indexes,
             position=self.config['initial_positions'],
         )
@@ -112,7 +113,38 @@ class RobotBase:
                 })
                 
         return joints
-
+    
+    def get_body_link_uid(self,
+                          link_name: str
+                          ) -> Tuple[Optional[int], Optional[int]]:
+        """
+        Find the link uid by given its name.
+        
+        :param link_name: str, the name of the link to find.
+        :return link_uid: (str, None), link uid or None if not found.
+        """
+        
+        n_joints = self._bc.getNumJoints(self.robot_uid)
+        
+        for link_uid in range(n_joints):
+            # get joint info
+            j_info = list(self._bc.getJointInfo(self.robot_uid, link_uid))
+            if j_info[12].decode('UTF-8') == link_name:
+                return self.robot_uid, link_uid
+            
+        return None, None
+    
+    
+    def controller_update(self,
+                          control_cmds: dict) -> None:
+        
+        for cmd_type, cmd_value in control_cmds.items():
+            if cmd_type == 'joint_position_control':
+                self.set_joint_position_controller(
+                    self.motor_joint_indexes,
+                    position=cmd_value
+                )
+        
     
     def execute_motion_primitive(self, primitive: dict) -> None:
         """
@@ -129,9 +161,8 @@ class RobotBase:
     def reset(self):
         pass
     
-
     
-    def update_joint_motor_controllers(self, joint_idx, position):
+    def set_joint_position_controller(self, joint_idx, position):
         """
         Set the new target position for robot joints
         """
@@ -141,7 +172,7 @@ class RobotBase:
             jointIndices=self.motor_joint_indexes,
             controlMode=p.POSITION_CONTROL,
             targetPositions=position,
-            positionGains=np.ones(len(self.motor_joint_indexes)) * 0.005
+            positionGains=np.ones(len(self.motor_joint_indexes)) * 0.005,
         )
     
     @property

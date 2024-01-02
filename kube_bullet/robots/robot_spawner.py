@@ -76,7 +76,6 @@ class RobotSpawner:
                     'status': 'spawning'
                 }
             })
-            
         return robots
     
     def print_robot_joint_info(self, robot_uid):
