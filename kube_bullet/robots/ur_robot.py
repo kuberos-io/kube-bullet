@@ -6,6 +6,7 @@ import numpy as np
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 from robots.robot_base import RobotBase
+from utils.pose_marker import create_pose_marker
 
 
 JointInfo = namedtuple('JointInfo',
@@ -17,17 +18,33 @@ class URRobot(RobotBase):
     
     def __init__(self, 
                  bullet_client: BulletClient, 
-                 robot_uid: str,
+                 robot_uid: int,
                  robot_config: dict) -> None:
-        super().__init__(bullet_client, robot_uid, robot_config)
-    
         
         self.arm_eef_link_idx = 34
         
         self.arm_joint_position = []
         self.waypoints = deque()
         
+        self.ik_base_marker_uids = [-1] * 4
+        self.ik_eef_marker_uids = [-1] * 4
         
+        super().__init__(bullet_client, robot_uid, robot_config)
+        
+    def initialize_robot(self, reset_joint_positions=True):
+        super().initialize_robot(reset_joint_positions=reset_joint_positions)
+        
+        # add markers
+        self.ik_base_marker_uids = create_pose_marker(
+            position=[0, 0, 0],
+            orientation=[0, 0, 0, 1],
+            lifeTime=0, 
+            text="base_link_inertia",
+            parentObjectUniqueId = self.robot_uid,
+            parentLinkIndex=3,
+            replaceItemUniqueIdList=self.ik_base_marker_uids
+        )
+    
     def set_arm_position_controller(self, target_position):
         self.set_joint_position_controller(
             joint_idx=self.motor_joint_indexes,

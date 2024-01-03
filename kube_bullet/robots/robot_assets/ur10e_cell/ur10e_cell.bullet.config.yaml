@@ -16,6 +16,9 @@ ur10e:
   initial_positions: [0, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]
   default_controller: position_controller
   goal_tolerance: 0.002
+  # ik
+  ik_base_link: base_link_inertia
+  ik_eef_link: tool0
 
 robotiq_gripper:
   joints:
