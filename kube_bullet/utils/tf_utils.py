@@ -12,10 +12,12 @@ class T:
                  quaternion=(0.0, 0.0, 0.0, 1.0),
                  frame_name=None,
                  parent_frame=None,
+                 name=None,
                  ) -> None:
         
         self.frame_name = frame_name
         self.parent_frame = parent_frame
+        self.name = name
         
         self._matrix = np.zeros((4, 4))
         self._matrix[3, 3] = 1
