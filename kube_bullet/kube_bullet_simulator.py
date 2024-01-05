@@ -55,8 +55,8 @@ class KubeBulletSimulator:
         self.grpc_server.start()
         
         # registered robots, objects, cameras, and debug markers
-        self.registered_robots = {}
-        self.registered_robots_list = []
+        self.robot_modules = {}
+        self.registered_robot_list = []
         self.interactive_objects = []
         self.cameras = {}
         self.markers = {}
@@ -73,21 +73,25 @@ class KubeBulletSimulator:
             cmd = cmds.popleft()
             logger.info(f"Receive setup command: {cmd}")
             # spawn robot
-            if cmd['cmd_type'] == 'spawn_robot':
-                self.spawn_robot(spawn_request=cmd['cmd_metadata'])
-                
+            if cmd['resource'] == 'robot':
+                self.setup_robot(
+                    command=cmd['command'],
+                    metadata=cmd['metadata'])
+
             # spawn camera
-            if cmd['cmd_type'] == 'spawn_camera':
-                success, retry, info = self.spawn_camera(metadata=cmd['cmd_metadata'])
+            if cmd['resource'] == 'camera':
+                success, retry, info = self.setup_camera(
+                    command=cmd['command'],
+                    metadata=cmd['metadata'])
                 if retry:
                     self.grpc_server.push_back_unssucceed_commands(cmd)
 
             # spawn object
-            if cmd['cmd_type'] == 'spawn_object':
+            if cmd['resource'] == 'object':
                 self.spawn_object(metadata=cmd['cmd_metadata'])
 
             # add markers
-            if cmd['cmd_type'] == 'create_markers':
+            if cmd['resource'] == 'pose_marker':
                 self.create_markers(metadata=cmd['cmd_metadata'])
         return
 
@@ -103,29 +107,62 @@ class KubeBulletSimulator:
         self.world.load_assets()
         return
 
-    def spawn_robot(self, spawn_request):
+    def setup_robot(self,
+                    command: str,
+                    metadata: dict) -> None:
         """
-        Spawning new robot in the simulation
-        TODO: Refactoring
+        Spawn or remove robot in the simulation
         """
-        
-        robot_name = spawn_request['robot_name']
+        robot_name = metadata['robot_name']
         
         # check whether the requested robot is already spawned        
         # prevent spawning same robot twice
-        if robot_name in self.registered_robots_list:
-            logger.error(f"Robot [{robot_name}] is already existed in the simulation.")
-            return
-        
-        # call 
-        self.registered_robots.update(self.robot_spawner.spawn(
-            robot_name='ur10e_cell',
-            robot_config_path="/workspace/kube_bullet/robots/robot_assets/ur10e_cell/ur10e_cell.bullet.config.yaml"
-        ))
-        self.registered_robots_list.append(robot_name)
-        return
+        if robot_name in self.registered_robot_list:
+            if command == 'spawn':
+                logger.error(f"Robot [{robot_name}] is already existed in the simulation.")
+                return
+        else:
+            if command == 'remove':
+                logger.error(f"Robot [{robot_name}] not existed in the simulation.")
+                return
 
-    def spawn_camera(self, metadata):
+        # spawn robot
+        if command == 'spawn':
+            spawn_result = self.robot_spawner.spawn(
+                robot_name=metadata['robot_name'],
+                robot_config_path=metadata['robot_config_path']
+            )
+            self.robot_modules.update(spawn_result)
+            self.registered_robot_list.append(robot_name)
+            
+            # update grpc buffer TODO
+            self.grpc_server.update_setup_execution_status(
+                resource='robot',
+                name = list(spawn_result.keys()),
+                status = ['active'] * len(spawn_result.keys())
+            )
+            return
+
+        # remove robot
+        if command == 'remove':
+            # Since the robot_uid is stored in each robot module and the robot has multiple modules
+            # therefore, find the first one and call Bullet to remove it. 
+            for name, module in self.robot_modules.items():
+                if name.split('__')[0] == robot_name:
+                    self._bc.removeBody(module['robot_uid'])
+                    self.robot_modules.pop(name)
+
+                    # update grpc buffer
+                    self.grpc_server.update_setup_execution_status(
+                        resource='robot',
+                        name = [name],
+                        status = ['removed']
+                    )
+            return
+
+
+    def setup_camera(self, command: str,
+                     metadata: dict) -> None:
         """
         Spawn a camera and attach on the robot in the world
         
@@ -145,34 +182,32 @@ class KubeBulletSimulator:
             logger.error(f"Camera with name [{camera_name}] is already attached in the simulation.")
             return
     
-        robot_name = metadata['attach_body_name']
-        link_name = metadata['attach_link_name']
+        parent_body = metadata['parent_body']
+        parent_link = metadata['parent_link']
         
         # check the robot existence
-        if not robot_name in self.registered_robots.keys():
-            logger.warning(f"Robot {robot_name} is not existed, waiting for robot spawning... \
-                             registered robots: {self.registered_robots.keys()}")
+        if not parent_body in self.robot_modules.keys():
+            logger.warning(f"Robot {parent_body} is not existed, waiting for robot spawning... \
+                             registered robots: {self.robot_modules.keys()}")
             retry = True
-            return success, retry, f"Robot {robot_name} is not existed"
+            return success, retry, f"Robot {parent_body} is not existed"
         
         # check link_existence
-        body_uid, link_uid = self.registered_robots['ur10e_cell__ur10e']['instance'].get_body_link_uid(
-            link_name=link_name
+        body_uid, link_uid = self.robot_modules['ur10e_cell__ur10e']['instance'].get_body_link_uid(
+            link_name=parent_link
         )
         if link_uid < 0:
-            logger.error(f"Robot link {link_name} not found")
-            return success, retry, f"Robot link {link_name} not found"
+            logger.error(f"Robot link {parent_link} not found")
+            return success, retry, f"Robot link {parent_link} not found"
         
         # create camera
         self.cameras.update({
             camera_name: {
                 'instance': BulletRenderer(
-                    camera_name, 
                     self._bc, 
                     body_uid=body_uid, 
                     link_uid=link_uid,
-                    depth_range=[0.1, 10],
-                    auto_rendering=metadata['auto_rendering'])
+                    **metadata)
             }
         })
     
@@ -200,12 +235,12 @@ class KubeBulletSimulator:
         # check parent body
         parent_body = metadata['parent_body']
         parent_link = metadata['parent_link']
-        if not parent_body in self.registered_robots:
+        if not parent_body in self.robot_modules:
             logger.error(f"Parent body with name: {parent_body} is not registered.")
             return
         
         # check link name
-        body_uid, link_uid = self.registered_robots[parent_body]['instance'].get_body_link_uid(
+        body_uid, link_uid = self.robot_modules[parent_body]['instance'].get_body_link_uid(
             link_name=parent_link
         )
         if link_uid < 0:
@@ -290,7 +325,7 @@ class KubeBulletSimulator:
         self.execute_primitives()
         
         # call the robot spin method to update the robot controllers
-        for _, rob in self.registered_robots.items():
+        for _, rob in self.robot_modules.items():
             rob['instance'].spin()
 
 
@@ -304,7 +339,7 @@ class KubeBulletSimulator:
 
         for robot_cmds in received_cmds:
             # logger.info(f"Robot Commands: {robot_cmds}")
-            self.registered_robots[robot_cmds['name']]['instance'].controller_update(
+            self.robot_modules[robot_cmds['name']]['instance'].controller_update(
                 control_cmds=robot_cmds['control_cmds']
             )
         return
@@ -315,7 +350,7 @@ class KubeBulletSimulator:
         TODO: publish states of all robots and interactive objects
         """
         # get ur_arm_state
-        for name, rob in self.registered_robots.items():
+        for name, rob in self.robot_modules.items():
             joint_position = rob['instance'].get_joint_states()
             # TODO 
             # for rob_name, joint_position in rob_state.items():
@@ -335,11 +370,11 @@ class KubeBulletSimulator:
         
         for prim in primitives:
             
-            if not prim['robot_name'] in self.registered_robots.keys():
+            if not prim['robot_name'] in self.robot_modules.keys():
                 logger.error(f"Request robot {prim['robot_name']} is not rigestered")
                 return
             logger.info(f"Processing the motion primitive: {prim}")
-            self.registered_robots[prim['robot_name']]['instance'].execute_motion_primitive(
+            self.robot_modules[prim['robot_name']]['instance'].execute_motion_primitive(
                 prim
             )
     
