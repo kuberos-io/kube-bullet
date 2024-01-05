@@ -43,9 +43,11 @@ class KubeBulletClient:
         print("Check server connection: ", res)
 
     def spawn_robot(self):
-        res = self.stub.SpawnRobot(kube_bullet_grpc_pb2.RobotMetadata(
+        res = self.stub.SetupRobot(kube_bullet_grpc_pb2.RobotSetupRequest(
+            command = 'spawn',
             robot_name = 'ur10e_cell',
-            active_components = ['ur10e', 'robotiq_gripper']
+            active_components = ['ur10e', 'robotiq_gripper'],
+            robot_config_path="/workspace/kube_bullet/robots/robot_assets/ur10e_cell/ur10e_cell.bullet.config.yaml"
         ))
         print(f"Robot spawn status: {res}")
 
