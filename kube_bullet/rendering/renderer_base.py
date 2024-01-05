@@ -7,39 +7,56 @@ from pybullet_utils.bullet_client import BulletClient
 from utils.pose_marker import create_pose_marker
 from utils.tf_utils import T
 
+
 class BulletRenderer:
     """
     Rendering the scene using the Bullet build-in OpenGL-based renderer
     """
     def __init__(self,
-                 camera_name: str,
                  bullet_client: BulletClient,
                  body_uid: int,
                  link_uid: int,
-                 translation_offset=[0.0, 0.0, 0.0],
-                 rotation_offset=[0.0, 0.0, 0.0, 1.0],
+                 camera_name: str,
+                 position=[0.0, 0.0, 0.0],
+                 quaternion=[0.0, 0.0, 0.0, 1.0],
                  intrinsic_param = [450, 0, 320, 0, 450, 240, 0, 0, 1],
                  width=640,
                  height=480,
-                 depth_range=[0.2, 50],
+                 depth_range=[0.1, 10],
                  frequence = 30,
-                 auto_rendering = True
+                 auto_rendering = True,
+                 **kwargs,
                  ) -> None:
         """
-        :param intrinsic_param, list, the flatted cameraintrinsic matrix
+        
+        :param intrinsic_param (list): the flatted cameraintrinsic matrix
                 [[f_x    0     c_x],
                  [0      f_y   c_y],
                  [0      0       1]]
                  assumption: f_x = f_y
         """
         
-        self.camera_name = camera_name
+        # Set defaults if none are received from gRPC
+        if len(depth_range) == 0:
+            logger.warning(f"Received wrong or empty depth range: {depth_range}, using defaults")
+            depth_range = [0.1, 10]
+        if len(position) != 3:
+            logger.warning(f"Received wrong or empty position offset: {position}, using defaults")
+            position = [0.0, 0.0, 0.0]
+        if len(quaternion) != 4:
+            logger.warning(f"Received wrong or empty rotation offset (quaternion): {quaternion}, using defaults")
+            quaternion = [0.0, 0.0, 0.0, 1.0]
+        if len(intrinsic_param) != 9:
+            logger.warning(f"Received wrong or empty intrinsic parameter: {intrinsic_param}, using defaults")
+            intrinsic_param = [450, 0, 320, 0, 450, 240, 0, 0, 1]
+
         self._bc = bullet_client
+        self.camera_name = camera_name
         self.body_uid = body_uid
         self.link_uid = link_uid
 
-        self.t_camera_offset = T(translation=translation_offset,
-                                 quaternion=rotation_offset)
+        self.t_camera_offset = T(translation=position,
+                                 quaternion=quaternion)
         
         self.t_camera_in_world = T()
         
@@ -128,7 +145,6 @@ class BulletRenderer:
             camera_qua = [0.0, 0.0, 0.0, 1.0]
         
         self.t_camera_in_world = T(camera_pos, camera_qua) * self.t_camera_offset
-        
         return
         
     def add_pose_marker(self):
@@ -154,4 +170,3 @@ class BulletRenderer:
         self.link_uid = link_uid
         
         self.add_pose_marker()
-
