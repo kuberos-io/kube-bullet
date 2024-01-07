@@ -84,14 +84,14 @@ class ObjectBase:
             self._bc.removeUserDebugItem(uid)
         return
 
-    def get_object_pose(self) -> Tuple[list, list]:
+    def get_object_pose(self) -> Tuple[tuple, tuple]:
         """
         Get object pose in world coordinate
         """
         pos, qua = self._bc.getBasePositionAndOrientation(
             self.obj_uid
         )
-        return pos, qua    
+        return pos, qua
 
     def set_object_pose(self,
                         pos: list,

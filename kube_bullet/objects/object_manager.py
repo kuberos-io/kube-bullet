@@ -1,6 +1,6 @@
 
 import yaml
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from loguru import logger
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
@@ -80,6 +80,13 @@ class ObjectManager:
         
         logger.info(f"Remove object {obj_name}")
         return
+
+    def get_object_state_sequence(self) -> Tuple[str, tuple, tuple]:
+        """
+        Iterates over all loaded objects and yields the state
+        """
+        for name, obj in self._loaded_objs.items():
+            yield name, *obj['instance'].get_object_pose()
 
     @property
     def loaded_objects(self):

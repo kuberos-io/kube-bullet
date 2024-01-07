@@ -8,6 +8,8 @@ from pybullet_utils.bullet_client import BulletClient
 
 from worlds.bullet_world import BulletWorld
 from robots.robot_spawner import RobotSpawner
+from objects.object_manager import ObjectManager
+
 from objects.object_base import ObjectBase
 from rendering.renderer_base import BulletRenderer
 from utils.pose_marker import create_pose_marker
@@ -51,6 +53,7 @@ class KubeBulletSimulator:
         
         # robot spawner and grpc server
         self.robot_spawner = RobotSpawner(self._bc)
+        self.object_manager = ObjectManager(self._bc)
         self.grpc_server = KubeBulletGrpcServer()
         self.grpc_server.start()
         
@@ -88,7 +91,9 @@ class KubeBulletSimulator:
 
             # spawn object
             if cmd['resource'] == 'object':
-                self.spawn_object(metadata=cmd['cmd_metadata'])
+                self.setup_object(
+                    command=cmd['command'],
+                    metadata=cmd['metadata'])
 
             # add markers
             if cmd['resource'] == 'pose_marker':
@@ -178,15 +183,15 @@ class KubeBulletSimulator:
         retry = False
         
         camera_name = metadata['camera_name']
-        if camera_name in [camera['name'] for camera in self.cameras.keys()]:
-            logger.error(f"Camera with name [{camera_name}] is already attached in the simulation.")
-            return
+        if camera_name in self.cameras:
+            logger.error(f"Camera <{camera_name}> is already attached in the simulation.")
+            return success, retry, f"Camera <{camera_name}> is already existed"
     
         parent_body = metadata['parent_body']
         parent_link = metadata['parent_link']
         
         # check the robot existence
-        if not parent_body in self.robot_modules.keys():
+        if not parent_body in self.robot_modules:
             logger.warning(f"Robot {parent_body} is not existed, waiting for robot spawning... \
                              registered robots: {self.robot_modules.keys()}")
             retry = True
@@ -216,6 +221,7 @@ class KubeBulletSimulator:
         success = True
         
         return success, retry, ''
+
 
     def create_markers(self, metadata=None):
         """
@@ -278,27 +284,34 @@ class KubeBulletSimulator:
         self.markers.pop(marker_group_name)
         return
     
-    def spawn_object(self, metadata=None):
+    def setup_object(self, 
+                     command,
+                     metadata):
         """
-        Spawn objects
+        Setup objects
         TODO: Refactoring
         """
-        
-        if not metadata is None:
-            object_name = metadata['object_name']
-            
-            if object_name in [obj['name'] for obj in self.interactive_objects]:
-                logger.error(f"Object with name [{object_name}] is already existed in the simulation.")
-            
-            else:
-                cube = ObjectBase(
-                    self._bc,
-                    urdf_path="/workspace/kube_bullet/objects/object_assets/cube/object.urdf"
-                )
-                cube.load(
-                    pos=[0.5, -0.2, 1.0]
-                )
-        return
+
+        if command == 'spawn':
+            # check existence
+            if self.object_manager.is_object_existed(obj_name=metadata['object_name']):
+                logger.warning(f"Object {metadata['object_name']} is existed.")
+                return
+            # load
+            self.object_manager.load(**metadata)
+            self.grpc_server.update_setup_execution_status(
+                resource='object',
+                name = [metadata['object_name']],
+                status = ['LOADED']
+            )
+            return
+        if command == 'remove':
+            self.object_manager.remove(metadata['object_name'])
+            self.grpc_server.update_setup_execution_status(
+                resource='object',
+                name = [metadata['object_name']],
+                status = ['REMOVED']
+            )
 
     def remove_object(self):
         pass
@@ -328,6 +341,12 @@ class KubeBulletSimulator:
         for _, rob in self.robot_modules.items():
             rob['instance'].spin()
 
+    def env_spin(self):
+        """
+        Update object state in grpc server buffer
+        """
+        for state in self.object_manager.get_object_state_sequence():
+            self.grpc_server.set_object_state(*state)
 
     def rec_new_control_command(self):
         """
@@ -395,6 +414,8 @@ class KubeBulletSimulator:
             self.robots_spin()
             
             self.renderer_spin()
+            
+            self.env_spin()
 
             p.stepSimulation()
 
