@@ -18,11 +18,12 @@ ur10e:
   goal_tolerance: 0.002
   # ik
   ik_base_link: base_link_inertia
+  # ik_eef_link: wrist_3_link
   ik_eef_link: tool0
 
 robotiq_gripper:
   joints:
-    - finger_joint # 27
+    - finger_joint # 26
   initial_positions: [0.2]
   default_controller: position_controller
   
