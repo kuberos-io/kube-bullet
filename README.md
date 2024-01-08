@@ -27,7 +27,7 @@ The code in the project folder are directly mounted into the `/workspace` in `De
 
 ## Quick Start
 
-Installing this project. 
+Install this project if you do not use VSCode.
 ```bash
 pip install -e
 ```
