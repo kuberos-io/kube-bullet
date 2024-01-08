@@ -25,7 +25,7 @@ class KubeBulletClient:
             action = 'STOP'
         ))
         print(res)
-        
+
     def run_steps(self, steps = 100):
         res = self.stub.SetupSimulator(kube_bullet_grpc_pb2.SimulatorSetupRequest(
             action = 'RUN_STEPS',
@@ -67,7 +67,7 @@ class KubeBulletClient:
         print("Object state: \n")
         print(res)
 
-    
+
 def run():
     
     client = KubeBulletClient()
@@ -76,7 +76,7 @@ def run():
 
     client.spawn_object()
 
-    input('RUN')
+    input('RUN 100 steps? Press ENTER')
     
     client.run_steps(100)
 

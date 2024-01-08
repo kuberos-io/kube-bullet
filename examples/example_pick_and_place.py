@@ -14,8 +14,7 @@ class KubeBulletClient:
         
         self.channel = grpc.insecure_channel(f"0.0.0.0:{self._insecure_port}")
         self.stub = kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceStub(self.channel)
-        
-        
+
     def __delete__(self):
         super(self).__delete__()
         self.channel.close()    
@@ -118,25 +117,21 @@ class KubeBulletClient:
 def run():
     
     client = KubeBulletClient()
-    
-    
-    
-    client.spawn_robot()
 
+    client.spawn_robot()
     client.spawn_object()
-    
     client.spawn_camera()
     
-    input("Send new joint position?")
+    input("Send new joint position? Press ENTER")
     client.send_joint_position()
     
-    input("Move EEF?")
+    input("Move EEF?  Press ENTER")
     client.move_eef_through_poses()
     
-    input("Closing gripper?")
+    input("Closing gripper?  Press ENTER")
     client.close_gripper()
 
-    input("Pick up?")
+    input("Pick up?  Press ENTER")
     client.pick_up_object()
 
 

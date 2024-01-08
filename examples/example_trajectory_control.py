@@ -204,7 +204,7 @@ def run():
     
     # client.spawn_camera()
     
-    input("Move for grasping")
+    input("Move for grasping? press ENTER")
     
     poses = [init_pose, sec_pose, third_pose, pre_pose, final_pose]
     
