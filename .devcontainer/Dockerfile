@@ -64,13 +64,8 @@ RUN cd /opt/devcon_lib/tracikpy \
     && pip install .
 
 
-
-
-
 ##############################################################################
 ##                               Pybullet                                   ##
 ##############################################################################
 ADD requirements.txt /tmp
 RUN pip --no-cache-dir install -r /tmp/requirements.txt
-
-
