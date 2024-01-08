@@ -28,12 +28,13 @@ class KubeBulletSimulator:
     def __init__(self,
                  use_bullet_gui: bool=True,
                  bullet_time_step: float=1.0/240,
-                 rendering_time_step: float=1.0/30,
+                 # rendering_time_step: float=1.0/30,
                  desired_realtime_factor: float=1.0,
                  ) -> None:
         
+        # simulation control flags
+        self._run_steps = -1
         self._bullet_time_step = bullet_time_step
-        self._rendering_time_step = rendering_time_step
         self._rt_factor = desired_realtime_factor
         
         # start bullet instance
@@ -50,7 +51,7 @@ class KubeBulletSimulator:
         logger.info(f"Timestep for physic engine: {self._bullet_time_step * 1000} ms")
         
         self.sim_time = 0.0
-        
+
         # robot spawner and grpc server
         self.robot_spawner = RobotSpawner(self._bc)
         self.object_manager = ObjectManager(self._bc)
@@ -65,11 +66,15 @@ class KubeBulletSimulator:
         self.markers = {}
         
         self.initialize_world()
-
+    
     def setup_update(self) -> None:
         """
         Check the grpc buffer and update simulation scene
         """
+        
+        # update simulation control flags
+        if self.grpc_server.check_new_sim_control_cmd():
+            self._run_steps, self._rt_factor, self._bullet_time_step = self.grpc_server.get_simulation_control_flags()
         
         cmds = self.grpc_server.get_setup_command()
         while len(cmds) > 0:
@@ -396,9 +401,7 @@ class KubeBulletSimulator:
             self.robot_modules[prim['robot_name']]['instance'].execute_motion_primitive(
                 prim
             )
-    
-    
-    
+
     def spin(self):
         """
         Main loop: 
@@ -411,31 +414,36 @@ class KubeBulletSimulator:
             
             self.setup_update()
             
+            if self._run_steps == 0:
+                time.sleep(0.02)
+                continue
+
             self.robots_spin()
-            
             self.renderer_spin()
-            
-            self.env_spin()
 
             p.stepSimulation()
 
+            # update object states
+            self.env_spin()
+            # update robot states
+            self.robots_publish_state()
+            
             self.sim_time += self._bullet_time_step
             
             end = time.time()
 
-            # print debugging info
+            # sleep, if the simulation runs faster than desired rt_factor
             if self._rt_factor > 0:
                 sleep_time = self._bullet_time_step * (1/self._rt_factor) - (end - start)
                 if sleep_time > 0:
                     time.sleep(sleep_time)        
-                #     logger.info(f"Sleep_time: {sleep_time * 1000} ms  \
-                #         -- Max RT-Factor: {(sleep_time/(end-start)) + 1 }")
+                    # logger.info(f"Sleep_time: {sleep_time * 1000} ms  \
+                    #     -- Max RT-Factor: {(sleep_time/(end-start)) + 1 }")
                 else:
                     logger.warning(f"Execution exceeds desired period. Loop time: {(end - start) * 1000 } ms")
-            
-            # update the robot states
-            self.robots_publish_state()
 
+            self._run_steps -= 1
+    
     def reset(self):
         pass
     
