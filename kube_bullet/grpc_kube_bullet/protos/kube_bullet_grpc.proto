@@ -1,0 +1,267 @@
+
+syntax = "proto3";
+
+// option java_multiple_files = true;
+// option java_package = "io.grpc.examples.routeguide";
+// option java_outer_classname = "RouteGuideProto";
+// option objc_class_prefix = "RTG";
+
+package kube_bullet_grpc;
+
+
+// Interface exported by the server.
+service KubeBulletInterface {
+    
+    // Healthy check | Handshake
+    rpc CheckServerConnection(Ping) returns (Pong) {}
+
+    // robot
+    rpc SetupRobot(RobotSetupRequest) returns (RobotStatus) {}
+    // robot position control
+    rpc SendRobotJointPositionCommand(RobotJointPositionCommand) returns (RobotStatus) {}
+    // control primitives
+    rpc MoveArmThroughEefPoses(MoveArmThroughEefPosesRequest) returns (RobotStatus) {}
+    // gripper
+    rpc ExecuteGripperControlPrimitive(GripperControlPrimitive) returns (GripperStatus) {}
+    rpc ReuqestGripperStatus(GripperStatusRequest) returns (GripperStatus) {}
+
+    // camera
+    rpc SetupCamera(CameraSetupRequest) returns (CameraStatus) {}
+    rpc RequestRendering(RenderingRequest) returns (CameraStatus) {}
+
+    // object
+    rpc SetupObject(ObjectSetupRequest) returns (ObjectState) {}
+    rpc RequestObjectState(ObjectStateRequest) returns (ObjectState) {}
+    rpc RequestObjectGraspPose(ObjectGraspPoseRequest) returns (ObjectGraspPose) {}
+
+    // debugging
+    rpc CreatePoseMarkers(PoseMarkerCreateRequest) returns (PoseMarkerCreateResponse) {}
+    
+    // simulation setup
+    rpc SetupSimulator (SimulatorSetupRequest) returns (SimulatorStatus) {}
+
+
+// Publish current robot position status (deprecated)
+// rpc SubRobotPosition(RobotName) returns (stream RobotPosition) {}
+}
+
+
+
+
+///////////////  Handshake   /////////////////
+message Ping{
+    bool ping = 1;
+}
+
+message Pong {
+    bool pong = 1;
+}
+
+
+///////////////   Setup    /////////////////
+message SimulatorSetupRequest{
+    string action = 1;  // RUN_RT | RUN_FAST | RUN_STEPS | STOP
+    int64 steps = 2;
+    int64 timestep = 3;
+}
+
+message SimulatorStatus {
+    string action = 1;
+    double sim_time = 2;
+    double rt_factor = 3;
+}
+
+// command: spawn, update, remove, reset
+// robot
+message RobotSetupRequest{
+    string command = 1; // spawn | remove
+    string robot_name = 2;
+    string robot_config_path = 3;  // path to robot config yaml file
+    repeated string active_components = 4;  // controllable components defined in yaml
+}
+// camera
+message CameraSetupRequest {
+    string command = 1;  // spawn | update | remove
+    string camera_name = 2;
+    string parent_body = 3;
+    string parent_link = 4;
+    bool auto_rendering = 5;
+    repeated float position = 6;
+    repeated float quaternion = 7;
+    repeated float intrinsic_param = 8;
+    repeated float depth_range = 9;
+}
+
+// interactive object
+message ObjectSetupRequest{
+    string command = 1; // spawn | remove | reset
+    string object_name = 2; // Unique object id in quering
+    string config_path = 3; // Using external urdf
+    string build_in_object = 4; // Using build_in object class
+    string parent_body = 5; // When using a reference coordinate for the spawn pose
+                            // By default: world coordinate
+    repeated float position = 6;
+    repeated float quaternion = 7;
+    repeated string flags = 8; // SHOW_BASE_POSE | SHOW_GRASP_POSE
+}
+
+
+
+///////////////////// Robots /////////////////////
+// Robot control and state
+message RobotJointState {
+    string robot_module_name = 1;
+    repeated string joint_names = 2;
+    repeated double positions = 3;
+    repeated double velocities = 4;
+}
+
+message RobotStatusRequest {
+    string robot_module_name = 1;
+}
+
+message RobotStatus {
+    string robot_module_name = 1;
+    string status = 2;
+    RobotJointState joint_state = 3;
+}
+
+message RobotJointPositionCommand {
+    string robot_module_name = 1;
+    repeated float positions = 2;
+}
+
+// Robot control primitives
+message MoveArmThroughEefPosesRequest {
+    string robot_module_name = 1;  // 
+    string eef_link_name = 2;
+    repeated pose_euler eef_poses = 3;
+}
+
+
+
+///////////////////// Gripper /////////////////////
+// Gripper control primitive
+message GripperControlPrimitive {
+    string gripper_module_name = 1;  // {robot_name}__{module_name}
+    string action_type = 2; // open close
+    double position = 3; // target position by opening
+    double velocity = 4; // close velocity
+    double force = 5; // close force
+}
+
+message GripperStatusRequest {
+    string gripper_module_name = 1;  // {robot_name}__{module_name}
+}
+
+message GripperStatus {
+    string gripper_module_name = 1;  // {robot_name}__{module_name}
+    string status = 2; // closing / opening / close / open / inactive / error
+    double position = 3;
+    double force = 4;
+}
+
+
+
+///////////////////// Cameras /////////////////////
+message RenderingRequest {
+    string camera_name = 1;
+    string save_path = 2;
+    bool save_rgb = 3;
+    bool save_seg = 4;
+    bool save_depth = 5;
+}
+
+message CameraStatus {
+    string camera_name = 1;
+    string status = 2;
+    string info = 3;
+}
+
+
+
+/////////////////////  Interactive objects /////////////////////
+message ObjectStateRequest{
+    string object_name = 1;
+}
+
+message ObjectState {
+    string object_name = 1;
+    string status = 2; // LOADING | LOADED | REMOVED | UNKNOWN
+    repeated float position = 3;
+    repeated float quaternion = 4;    
+}
+
+message ObjectGraspPoseRequest {
+    string object_name = 1;
+    string robot_module = 2;
+    string robot_eef = 3;
+}
+
+message ObjectGraspPose {
+    repeated float position = 4;
+    repeated float quaternion = 5;
+}
+
+
+
+//////////////////// Debugging /////////////////////
+// 3d pose marker
+message PoseMarker {
+    string name = 1;
+    repeated double position = 2;
+    repeated double quaternion = 3;
+}
+
+message PoseMarkerCreateRequest {
+    string name = 1;
+    string parent_body = 2;
+    string parent_link = 3;
+    repeated PoseMarker pose_markers = 4;
+}
+
+message PoseMarkerCreateResponse {
+    string status = 1;
+}
+
+
+
+// Geometry
+message pos {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+
+message rpy {
+    double r = 1;
+    double p = 2;
+    double y = 3;
+}
+
+message quaternion{
+    double x = 1;
+    double y = 2;
+    double z = 3;
+    double w = 4; 
+}
+
+message pose_euler {
+    pos position = 1;
+    rpy euler = 2;
+}
+
+message pose {
+    repeated float position = 1;
+    repeated float quaternion = 2;
+}
+
+// Collision
+message CollisionObject {
+    string object_id = 1;
+    string type = 2;
+    string ref_frame = 3;
+    repeated float size = 4;
+    repeated float object_pos = 5;
+    repeated float object_qua = 6;
+}
