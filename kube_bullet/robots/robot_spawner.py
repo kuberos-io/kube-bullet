@@ -5,8 +5,8 @@ import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 
 # Available robot models
-from robots.ur_robot import URRobot
-from robots.robotiq_gripper import RobotiqGripper
+from kube_bullet.robots.ur_robot import URRobot
+from kube_bullet.robots.robotiq_gripper import RobotiqGripper
 
 
 AVAILABLE_COMPONENTS = {
@@ -16,7 +16,13 @@ AVAILABLE_COMPONENTS = {
 
 
 class RobotSpawner:
+    """
+    Robot spawner is responsible for spawning robot controllable modules, such as 
+    arm, gripper based on a given URDF file.
     
+    It interacts with the PyBullet to create these modules in the simulation environment.
+    
+    """
     def __init__(self,
                  bullet_client: BulletClient
                  ) -> None:
@@ -30,10 +36,11 @@ class RobotSpawner:
             quaternion: list=[0.0, 0.0, 0.0, 1.0]
             ):
         """
-        Initialize the robots
+        Spawns a robot in the simulation environment and return the controllable modules
         
         Returns:
-            - list of robot instances
+            - A list of robot module instances. Each instance represents
+            a different component of the robot, such as an arm or a gripper.
         """
         
         self.robot_name = robot_name
@@ -73,7 +80,8 @@ class RobotSpawner:
             robots.update({
                 f'{self.robot_name}__{comp_name}':{
                     'instance': robot_instance,
-                    'status': 'spawning'
+                    'status': 'active',
+                    'robot_uid': self.robot_uid
                 }
             })
         return robots

@@ -11,7 +11,7 @@ from collections import deque
 from . import kube_bullet_grpc_pb2
 from . import kube_bullet_grpc_pb2_grpc
 
-from utils.tf_utils import T
+from kube_bullet.utils.tf_utils import T
 
 
 class _KubeBulletServicer(kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceServicer):

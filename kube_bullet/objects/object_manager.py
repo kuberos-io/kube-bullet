@@ -7,7 +7,7 @@ from pybullet_utils.bullet_client import BulletClient
 
 # Build_in objects
 # from objects.cube import Cube
-from objects.object_from_urdf import ObjectFromURDF
+from kube_bullet.objects.object_from_urdf import ObjectFromURDF
 
 
 BUILD_IN_OBJECTS = {

@@ -4,8 +4,8 @@ import numpy as np
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 
-from utils.pose_marker import create_pose_marker
-from utils.tf_utils import T
+from kube_bullet.utils.pose_marker import create_pose_marker
+from kube_bullet.utils.tf_utils import T
 
 
 class BulletRenderer:

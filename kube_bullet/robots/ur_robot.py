@@ -5,8 +5,9 @@ from loguru import logger
 import numpy as np
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
-from robots.robot_base import RobotBase
-from utils.pose_marker import create_pose_marker
+
+from kube_bullet.robots.robot_base import RobotBase
+from kube_bullet.utils.pose_marker import create_pose_marker
 
 
 JointInfo = namedtuple('JointInfo',
@@ -14,8 +15,7 @@ JointInfo = namedtuple('JointInfo',
                         'maxVelocity', 'controllable'])
 
 class URRobot(RobotBase):
-    
-    
+
     def __init__(self, 
                  bullet_client: BulletClient, 
                  robot_uid: int,
@@ -152,4 +152,3 @@ class URRobot(RobotBase):
         # logger.info("JP: {}", joint_positions)
         
         return robot_joint_positions
-    

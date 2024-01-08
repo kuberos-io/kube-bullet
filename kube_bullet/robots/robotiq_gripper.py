@@ -4,7 +4,8 @@ from loguru import logger
 import numpy as np
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
-from robots.robot_base import RobotBase
+
+from kube_bullet.robots.robot_base import RobotBase
 
 
 JointInfo = namedtuple('JointInfo',

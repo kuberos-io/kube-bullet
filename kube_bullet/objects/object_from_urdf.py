@@ -5,7 +5,7 @@ from loguru import logger
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 
-from objects.object_base import ObjectBase
+from kube_bullet.objects.object_base import ObjectBase
 
 
 

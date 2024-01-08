@@ -172,7 +172,7 @@ class RobotBase:
             jointIndices=self.motor_joint_indexes,
             controlMode=p.POSITION_CONTROL,
             targetPositions=position,
-            positionGains=np.ones(len(self.motor_joint_indexes)) * 0.005,
+            positionGains=np.ones(len(self.motor_joint_indexes)) * 0.01,
         )
     
     @property
