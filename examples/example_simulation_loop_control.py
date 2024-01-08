@@ -2,8 +2,8 @@
 import time
 import grpc
 
-from grpc_kube_bullet import kube_bullet_grpc_pb2
-from grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
 
 
 class KubeBulletClient:
@@ -15,8 +15,7 @@ class KubeBulletClient:
         
         self.channel = grpc.insecure_channel(f"0.0.0.0:{self._insecure_port}")
         self.stub = kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceStub(self.channel)
-        
-        
+
     def __delete__(self):
         super(self).__delete__()
         self.channel.close()    

@@ -8,10 +8,10 @@ from loguru import logger
 import numpy as np
 import grpc
 
-from grpc_kube_bullet import kube_bullet_grpc_pb2
-from grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
 
-from utils.tf_utils import T
+from kube_bullet.utils.tf_utils import T
 
 # external libraries
 import py_totg
@@ -52,13 +52,17 @@ class KubeBulletClient:
         print(f"Robot spawn status: {res}")
 
     def spawn_object(self):
-        res = self.stub.SpawnObject(kube_bullet_grpc_pb2.ObjectMetadata(
+        res = self.stub.SetupObject(kube_bullet_grpc_pb2.ObjectSetupRequest(
+            command = 'spawn',
             object_name = 'cube_1',
+            config_path = '/workspace/kube_bullet/objects/object_assets/cube/cube.bullet.config.yaml',
+            position = [0.5, -0.2, 1.0],
+            flags = ['SHOW_BASE_POSE']
         ))
         print(f"Object spawn status: {res}")
 
     def spawn_camera(self):
-        res = self.stub.SpawnCamera(kube_bullet_grpc_pb2.CameraSpawnRequest(
+        res = self.stub.SetupCamera(kube_bullet_grpc_pb2.CameraSetupRequest(
             camera_name = 'rs_eef_camera',
             attach_body_name = 'ur10e_cell__ur10e',
             attach_link_name = 'camera_link',
@@ -68,8 +72,7 @@ class KubeBulletClient:
     
     def send_joint_position(self, positions):
         robot_joint_position_command = kube_bullet_grpc_pb2.RobotJointPositionCommand(
-            robot_name = 'ur10e_cell__ur10e',
-            component_name = 'arm_ur10e',
+            robot_module_name = 'ur10e_cell__ur10e',
             positions = positions
             # positions = [0 - 0.3, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0 - 0.3]
         )
@@ -119,11 +122,11 @@ class TrajectoryGenerator:
         self.join_trajecotry = None
         
         self.ik_solver = TracIKSolver(
-            "robots/robot_assets/ur10e_cell/ur10e_only.urdf",
+            "/workspace/kube_bullet/robots/robot_assets/ur10e_cell/ur10e_only.urdf",
             "base_link_inertia", "wrist_3_link",
             timeout=0.05
         )
-        
+
         print("Joint limits from URDF: \n", self.ik_solver.joint_limits)
         print("Change joint limits")
         self.ik_solver.joint_limits = [self.JOINT_LOWER_LIMIT.tolist(),

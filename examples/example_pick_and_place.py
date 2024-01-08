@@ -1,8 +1,8 @@
 
 import grpc
 
-from grpc_kube_bullet import kube_bullet_grpc_pb2
-from grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
 
 
 class KubeBulletClient:
