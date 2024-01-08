@@ -30,8 +30,12 @@ class KubeBulletClient:
         print(f"Robot spawn status: {res}")
 
     def spawn_object(self):
-        res = self.stub.SpawnObject(kube_bullet_grpc_pb2.ObjectMetadata(
+        res = self.stub.SetupObject(kube_bullet_grpc_pb2.ObjectSetupRequest(
+            command = 'remove',
             object_name = 'cube_1',
+            config_path = '/workspace/kube_bullet/objects/object_assets/cube/cube.bullet.config.yaml',
+            position = [0.5, -0.2, 1.0],
+            flags = ['SHOW_BASE_POSE']
         ))
         print(f"Object spawn status: {res}")
 
@@ -109,12 +113,14 @@ class KubeBulletClient:
         
         res = self.stub.MoveArmThroughEefPoses(request)
         print(res)
-        
+
         
 def run():
     
     client = KubeBulletClient()
-        
+    
+    
+    
     client.spawn_robot()
 
     client.spawn_object()
