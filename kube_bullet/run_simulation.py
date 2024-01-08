@@ -3,7 +3,7 @@ import sys
 import argparse
 from loguru import logger
 
-from kube_bullet_simulator import KubeBulletSimulator
+from kube_bullet.kube_bullet_simulator import KubeBulletSimulator
 
 
 def main():

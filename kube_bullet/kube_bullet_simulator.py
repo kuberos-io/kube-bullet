@@ -6,17 +6,17 @@ from loguru import logger
 import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 
-from worlds.bullet_world import BulletWorld
-from robots.robot_spawner import RobotSpawner
-from objects.object_manager import ObjectManager
+from kube_bullet.worlds.bullet_world import BulletWorld
+from kube_bullet.robots.robot_spawner import RobotSpawner
+from kube_bullet.objects.object_manager import ObjectManager
 
-from objects.object_base import ObjectBase
-from rendering.renderer_base import BulletRenderer
-from utils.pose_marker import create_pose_marker
-from utils.tf_utils import T
+from kube_bullet.objects.object_base import ObjectBase
+from kube_bullet.rendering.renderer_base import BulletRenderer
+from kube_bullet.utils.pose_marker import create_pose_marker
+from kube_bullet.utils.tf_utils import T
 
 # grpc
-from grpc_kube_bullet.kube_bullet_grpc_server import KubeBulletGrpcServer
+from kube_bullet.grpc_kube_bullet.kube_bullet_grpc_server import KubeBulletGrpcServer
 
 
 
