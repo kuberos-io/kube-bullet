@@ -29,7 +29,7 @@ The code in the project folder are directly mounted into the `/workspace` in `De
 
 Install this project if you do not use VSCode.
 ```bash
-pip install -e
+pip install -e .
 ```
 
 Note: You can also use it directly in your python virtual environment. The `trajectory_control` example requires two additional libraries for ik and trajectory generation, see [`DockerFile`](.devcontainer/Dockerfile) for details. For other dependencies, see [`requirements`](requirements.txt).
