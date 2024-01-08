@@ -31,7 +31,7 @@ class KubeBulletClient:
 
     def spawn_object(self):
         res = self.stub.SetupObject(kube_bullet_grpc_pb2.ObjectSetupRequest(
-            command = 'remove',
+            command = 'spawn',
             object_name = 'cube_1',
             config_path = '/workspace/kube_bullet/objects/object_assets/cube/cube.bullet.config.yaml',
             position = [0.5, -0.2, 1.0],

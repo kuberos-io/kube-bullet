@@ -1,9 +1,13 @@
 
+import sys
+import os
+# sys.path.insert(0, os.path.dirname(os.getcwd()))
+print(sys.path)
 import time
 import grpc
 
-from grpc_kube_bullet import kube_bullet_grpc_pb2
-from grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2
+from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2_grpc
 
 
 class KubeBulletClient:
