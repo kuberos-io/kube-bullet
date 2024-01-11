@@ -378,9 +378,11 @@ class KubeBulletSimulator:
             joint_position = rob['instance'].get_joint_states()
             # TODO 
             # for rob_name, joint_position in rob_state.items():
-            self.grpc_server.set_robot_joint_state(
+            self.grpc_server.set_robot_state(
                 robot_name=name,
-                position=joint_position
+                state = rob['instance'].get_robot_state(),
+                # position=joint_position,
+                # status=rob['instance'].status
             )
         return
 
@@ -398,9 +400,11 @@ class KubeBulletSimulator:
                 logger.error(f"Request robot {prim['robot_name']} is not rigestered")
                 return
             logger.info(f"Processing the motion primitive: {prim}")
-            self.robot_modules[prim['robot_name']]['instance'].execute_motion_primitive(
+            response = self.robot_modules[prim['robot_name']]['instance'].execute_motion_primitive(
                 prim
             )
+            # update in grpc cache
+            self.grpc_server.update_primitive_execution_response(prim['robot_name'], response)
 
     def spin(self):
         """
