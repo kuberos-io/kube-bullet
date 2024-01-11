@@ -1,4 +1,5 @@
 
+import time
 import grpc
 
 from kube_bullet.grpc_kube_bullet import kube_bullet_grpc_pb2
@@ -57,7 +58,8 @@ class KubeBulletClient:
         res = self.stub.SendRobotJointPositionCommand(robot_joint_position_command)
         print(res)
     
-    def move_eef_through_poses(self):
+    def move_eef_through_poses(self,
+                               with_feedback: bool=False):
         pos_pre = kube_bullet_grpc_pb2.pos(x=0.5, y=-0.2, z=1.15)
         pos = kube_bullet_grpc_pb2.pos(x=0.5, y=-0.2, z=1.0)
         rpy = kube_bullet_grpc_pb2.rpy(r=0, p=0, y=0)
@@ -76,12 +78,20 @@ class KubeBulletClient:
             eef_link_name='tcp_link',
             eef_poses=[pose_euler_pre, pose_euler]
         )
-        print("Request: move eef to pose: ")
-        print(pose_euler)
-        
-        res = self.stub.MoveArmThroughEefPoses(request)
-        print(res)
-        
+
+        if not with_feedback:
+            print("Request: move eef to pose: ")
+            res = self.stub.MoveArmThroughEefPoses(request)
+            print(res)
+            return
+        else:
+            for feedback in self.stub.MoveArmThroughEefPosesWithFeedback(request):
+                print('End effector pose in world coordinate: ')
+                print('Position: ', feedback.position, 
+                      'Quaternion: ', feedback.quaternion)
+                print('Remaining avg joint angle distance: ', feedback.remaining_avg_joint_angle)
+            return
+
     def close_gripper(self):
         gripper_control_primitive = kube_bullet_grpc_pb2.GripperControlPrimitive(
             gripper_module_name='ur10e_cell__robotiq_gripper',
@@ -108,8 +118,6 @@ class KubeBulletClient:
             eef_poses=[pose_euler]
         )
         print("Request: move eef to pose: ")
-        print(pose_euler)
-        
         res = self.stub.MoveArmThroughEefPoses(request)
         print(res)
 
@@ -122,16 +130,20 @@ def run():
     client.spawn_object()
     client.spawn_camera()
     
-    input("Send new joint position? Press ENTER")
-    client.send_joint_position()
+    # test joint position control
+    # input("Send new joint position? Press ENTER")
+    # client.send_joint_position()
     
+    # Move EEF
     input("Move EEF?  Press ENTER")
-    client.move_eef_through_poses()
+    client.move_eef_through_poses(with_feedback=True)
     
-    input("Closing gripper?  Press ENTER")
+    # input("Closing gripper?  Press ENTER")
     client.close_gripper()
-
-    input("Pick up?  Press ENTER")
+    
+    # wait for gripper to close
+    time.sleep(1)
+    # input("Pick up?  Press ENTER")
     client.pick_up_object()
 
 
