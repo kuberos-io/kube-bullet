@@ -1,6 +1,8 @@
 
+import time
+import numpy as np
 from loguru import logger
-from typing import List
+from typing import List, Optional
 import copy
 import grpc
 from grpc import server
@@ -112,6 +114,9 @@ class _KubeBulletServicer(kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceServicer)
                         'joint_position_cmd': [],
                         'joint_velocity': [],
                         'eef_pose': [],
+                        'current_eef_goal_position': [],
+                        'current_eef_goal_quaternion': [],
+                        'current_joint_goal_position': [],
                         'is_new_command': False,
                     },
                 })
@@ -201,21 +206,11 @@ class _KubeBulletServicer(kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceServicer)
 
     ################## Control primitives ##################
     def MoveArmThroughEefPoses(self, request, context):
-
-        eef_poses = []
-        eef_eulers = []
-        for pose in request.eef_poses:
-            eef_poses.append([
-                pose.position.x,
-                pose.position.y,
-                pose.position.z,
-            ])
-            eef_eulers.append([
-                pose.euler.r,
-                pose.euler.p,
-                pose.euler.y,
-            ])
-
+        """
+        Request to move the end-effector through a list of poses
+        with out feedback
+        """
+        eef_poses, eef_eulers = self.convert_pose_msg_to_list(request.eef_poses)
 
         self.control_primitives.append({
             'robot_name': request.robot_module_name,
@@ -230,6 +225,64 @@ class _KubeBulletServicer(kube_bullet_grpc_pb2_grpc.KubeBulletInterfaceServicer)
         robot_status = kube_bullet_grpc_pb2.RobotStatus()
         robot_status.status = 'Accepted'
         return robot_status
+
+
+    def MoveArmThroughEefPosesWithFeedback(self, request, context):
+        """
+        Request to move the end-effector through a list of poses
+        Return the current eef pose and remaining distance to the goal as continuous feedback
+        """
+        logger.info(f"Received control primitive: Move EEF through poses with feedback: {self.control_primitives}")
+
+        eef_poses, eef_eulers = self.convert_pose_msg_to_list(request.eef_poses)
+        rob_module_name = request.robot_module_name
+        
+        self.control_primitives.append({
+            'robot_name': rob_module_name,
+            'primitive_type': 'move_eef_through_poses',
+            'data': {
+                'eef_pos': eef_poses,
+                'eef_euler': eef_eulers
+            }
+        })
+        
+        # update robot state cache
+        self.robot_modules[rob_module_name]['status'] = 'primitive_executing'
+        self.robot_modules[rob_module_name]['current_eef_goal_position'] = eef_poses[-1]
+        self.robot_modules[rob_module_name]['current_eef_goal_quaternion'] = eef_eulers[-1]
+        
+        while self.robot_modules[rob_module_name]['status'] == 'primitive_executing':
+            
+            # skip the first feedback
+            if len(self.robot_modules[rob_module_name]['current_joint_goal_position']) == 0:
+                time.sleep(0.01)
+                continue
+            remaining_avg_joint_angle = np.sqrt(np.sum((np.array(self.robot_modules[rob_module_name]['joint_position']) \
+                                                            - np.array(self.robot_modules[rob_module_name]['current_joint_goal_position'])) ** 2))
+            feedback = kube_bullet_grpc_pb2.MoveArmThroughEefPosesResponse(
+                position = self.robot_modules[request.robot_module_name]['eef_pose'][0: 3],
+                quaternion = self.robot_modules[request.robot_module_name]['eef_pose'][3: 7],
+                remaining_avg_joint_angle = remaining_avg_joint_angle
+            )
+            time.sleep(0.01)
+            yield feedback
+
+    @staticmethod
+    def convert_pose_msg_to_list(pose_msg):
+        eef_poses = []
+        eef_eulers = []
+        for pose in pose_msg:
+            eef_poses.append([
+                pose.position.x,
+                pose.position.y,
+                pose.position.z,
+            ])
+            eef_eulers.append([
+                pose.euler.r,
+                pose.euler.p,
+                pose.euler.y,
+            ])
+        return eef_poses, eef_eulers
 
 
     ################## Gripper ################## 
@@ -384,16 +437,20 @@ class KubeBulletGrpcServer:
 
 
     ######################### Robots #########################
-    def set_robot_joint_state(self,
-                           robot_name,
-                           position) -> None:
+    def set_robot_state(self,
+                        robot_name: str,
+                        state: Optional[dict]) -> None:
         """
-        cache the robot joint state
+        cache the robot state
         """
         # print(self.servicer.robot_modules)
-        self.servicer.robot_modules[robot_name]['joint_position'] = position
+        self.servicer.robot_modules[robot_name]['joint_position'] = state['joint_position']
+        self.servicer.robot_modules[robot_name]['status'] = state['status']
+        # add eef pose for robot arm
+        if 'eef_pose' in state:
+            self.servicer.robot_modules[robot_name]['eef_pose'] = state['eef_pose']
         return
-    
+
     def get_robot_commands(self):
         """
         Get the received robot control command
@@ -423,7 +480,21 @@ class KubeBulletGrpcServer:
         self.servicer.control_primitives = []
         return primitives
 
-    
+    def update_primitive_execution_response(self,
+                                            robot_module_name: str,
+                                            response: dict) -> None:
+        """
+        Update the execution response of control primitive
+        first use case: update the final goal joint position of move_eef_through_poses
+        """
+        if response is None:
+            logger.warning(f"Module {robot_module_name} return None response for control primitive.")
+            return
+        # For move_eef_through_poses
+        self.servicer.robot_modules[robot_module_name]['current_joint_goal_position'] = response['data']['current_joint_goal_position']
+        self.servicer.robot_modules[robot_module_name]['status'] = response['status']
+        return
+
     ######################### Objects #########################
     def set_object_state(self, 
                           object_name,
