@@ -21,6 +21,7 @@ service KubeBulletInterface {
     rpc SendRobotJointPositionCommand(RobotJointPositionCommand) returns (RobotStatus) {}
     // control primitives
     rpc MoveArmThroughEefPoses(MoveArmThroughEefPosesRequest) returns (RobotStatus) {}
+    rpc MoveArmThroughEefPosesWithFeedback(MoveArmThroughEefPosesRequest) returns (stream MoveArmThroughEefPosesResponse) {}
     // gripper
     rpc ExecuteGripperControlPrimitive(GripperControlPrimitive) returns (GripperStatus) {}
     rpc ReuqestGripperStatus(GripperStatusRequest) returns (GripperStatus) {}
@@ -44,8 +45,6 @@ service KubeBulletInterface {
 // Publish current robot position status (deprecated)
 // rpc SubRobotPosition(RobotName) returns (stream RobotPosition) {}
 }
-
-
 
 
 ///////////////  Handshake   /////////////////
@@ -138,6 +137,12 @@ message MoveArmThroughEefPosesRequest {
     repeated pose_euler eef_poses = 3;
 }
 
+message MoveArmThroughEefPosesResponse {
+    repeated float position = 1;
+    repeated float quaternion = 2;
+    float remaining_distance = 3;  // positional distance in cartersian coordinate
+    float remaining_avg_joint_angle = 4;
+}
 
 
 ///////////////////// Gripper /////////////////////

@@ -35,6 +35,11 @@ class KubeBulletInterfaceStub(object):
                 request_serializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.SerializeToString,
                 response_deserializer=kube__bullet__grpc__pb2.RobotStatus.FromString,
                 )
+        self.MoveArmThroughEefPosesWithFeedback = channel.unary_stream(
+                '/kube_bullet_grpc.KubeBulletInterface/MoveArmThroughEefPosesWithFeedback',
+                request_serializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.SerializeToString,
+                response_deserializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesResponse.FromString,
+                )
         self.ExecuteGripperControlPrimitive = channel.unary_unary(
                 '/kube_bullet_grpc.KubeBulletInterface/ExecuteGripperControlPrimitive',
                 request_serializer=kube__bullet__grpc__pb2.GripperControlPrimitive.SerializeToString,
@@ -110,6 +115,12 @@ class KubeBulletInterfaceServicer(object):
     def MoveArmThroughEefPoses(self, request, context):
         """control primitives
         """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MoveArmThroughEefPosesWithFeedback(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -195,6 +206,11 @@ def add_KubeBulletInterfaceServicer_to_server(servicer, server):
                     servicer.MoveArmThroughEefPoses,
                     request_deserializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.FromString,
                     response_serializer=kube__bullet__grpc__pb2.RobotStatus.SerializeToString,
+            ),
+            'MoveArmThroughEefPosesWithFeedback': grpc.unary_stream_rpc_method_handler(
+                    servicer.MoveArmThroughEefPosesWithFeedback,
+                    request_deserializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.FromString,
+                    response_serializer=kube__bullet__grpc__pb2.MoveArmThroughEefPosesResponse.SerializeToString,
             ),
             'ExecuteGripperControlPrimitive': grpc.unary_unary_rpc_method_handler(
                     servicer.ExecuteGripperControlPrimitive,
@@ -317,6 +333,23 @@ class KubeBulletInterface(object):
         return grpc.experimental.unary_unary(request, target, '/kube_bullet_grpc.KubeBulletInterface/MoveArmThroughEefPoses',
             kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.SerializeToString,
             kube__bullet__grpc__pb2.RobotStatus.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MoveArmThroughEefPosesWithFeedback(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/kube_bullet_grpc.KubeBulletInterface/MoveArmThroughEefPosesWithFeedback',
+            kube__bullet__grpc__pb2.MoveArmThroughEefPosesRequest.SerializeToString,
+            kube__bullet__grpc__pb2.MoveArmThroughEefPosesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
