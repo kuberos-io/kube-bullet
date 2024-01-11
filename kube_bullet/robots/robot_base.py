@@ -154,10 +154,10 @@ class RobotBase:
         This method that called in the simulation loop
         
         """
-        getattr(self, primitive['primitive_type'])(primitive['data'])
+        response = getattr(self, primitive['primitive_type'])(primitive['data'])
         self.set_motion_execution_status('executing')
-        return
-    
+        return response
+
     def reset(self):
         pass
     
@@ -192,6 +192,21 @@ class RobotBase:
         else:
             logger.error(f"Invalid status: {new_status}")
     
+    def get_joint_states(self):
+        
+        state = self._bc.getJointStates(self.robot_uid,
+                                            self.motor_joint_indexes)
+                
+        self.joint_position = [state[0] for state in state]
+       
+        return self.joint_position
+    
+    def get_robot_state(self):
+        return {
+            'status': self._status,
+            'joint_position': self.get_joint_states(),
+        }
+
     @property
     def motion_execution_status(self):
         """

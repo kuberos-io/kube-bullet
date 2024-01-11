@@ -1,9 +1,7 @@
 
-import copy
 from collections import namedtuple, deque
 from loguru import logger
 import numpy as np
-import pybullet as p
 from pybullet_utils.bullet_client import BulletClient
 
 from kube_bullet.robots.robot_base import RobotBase
@@ -55,16 +53,30 @@ class URRobot(RobotBase):
         # arm: 
         arm_state = self._bc.getJointStates(self.robot_uid,
                                             self.motor_joint_indexes)
-        
-        eef_link_state = self._bc.getLinkState(self.robot_uid, self.arm_eef_link_idx)
-        eef_pos, eef_qua = eef_link_state[4:6]
-        # logger.info("EEF Pos: {}, Qua: {}", eef_pos, eef_qua)
-        
+                
         self.arm_joint_position = [state[0] for state in arm_state]
        
         return self.arm_joint_position
 
-        
+    def get_eef_pose(self):
+        """
+        Get eef pose in world coordinate system
+        """
+        eef_link_state = self._bc.getLinkState(self.robot_uid, self.arm_eef_link_idx)
+        eef_pos, eef_qua = eef_link_state[4:6]
+        return eef_pos + eef_qua
+    
+    def get_robot_state(self):
+        """
+        Overwrite the get_robot_state method in RobotBase
+        Add eef pose in world coordinate system
+        """
+        return {
+            'status': self._status,
+            'joint_position': self.get_joint_states(),
+            'eef_pose': self.get_eef_pose()
+        }
+
     def joint_trajectory_controller_spin(self):
         
         if len(self.arm_joint_position) == 0:
@@ -82,15 +94,15 @@ class URRobot(RobotBase):
                 self.waypoints.popleft()
                 logger.info(f"Reach the waypoint: {current_goal}, \
                               Number of remained waypoints: {len(self.waypoints)}")
-                
+
                 # check whether reaching the final goal
                 if len(self.waypoints) == 0:
                     self.set_motion_execution_status('finished')
                     logger.info(f"trajectory execution finished")
-                    
+                    self._status = 'standby'
+
                 # spin again in one loop to update the postion_controller
                 self.joint_trajectory_controller_spin()
-
 
     def spin(self):
         """
@@ -124,7 +136,15 @@ class URRobot(RobotBase):
         for i in range(len(pos)):
             self.waypoints.append(self.calculate_eef_ik(pos[i], qua))
         
-        return 
+        self._status = 'primitive_executing'
+        
+        return {
+            'status': 'primitive_executing',
+            'primitive_type': 'primitive_executing',
+            'data': {
+                'current_joint_goal_position': self.waypoints[-1]
+            }
+        }
         
     def calculate_eef_ik(self, position, quaternion):
         """
